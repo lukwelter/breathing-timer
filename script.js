@@ -1,7 +1,4 @@
 const mainBtn = document.getElementById("mainBtn");
-
-const phaseLabel = document.getElementById("phaseLabel");
-const countdown = document.getElementById("countdown");
 const breathingCircle = document.getElementById("breathingCircle");
 const leftHalf = document.getElementById("leftHalf");
 const rightHalf = document.getElementById("rightHalf");
@@ -12,15 +9,11 @@ const phases = [
 ];
 
 let currentPhaseIndex = 0;
-let timeLeft = phases[0].duration;
 let intervalId = null;
 let running = false;
 
-function updateUI() {
+function updateVisuals() {
   const currentPhase = phases[currentPhaseIndex];
-
-  phaseLabel.textContent = currentPhase.name;
-  countdown.textContent = `${timeLeft}`;
 
   breathingCircle.classList.remove("inhale", "exhale");
   breathingCircle.classList.add(currentPhase.className);
@@ -36,47 +29,57 @@ function updateUI() {
 
 function nextPhase() {
   currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
-  timeLeft = phases[currentPhaseIndex].duration;
-  updateUI();
-}
-
-function tick() {
-  if (timeLeft > 1) {
-    timeLeft--;
-    updateUI();
-  } else {
-    nextPhase();
-  }
+  updateVisuals();
 }
 
 function startTimer() {
-  running = true;
-  mainBtn.textContent = "Reset";
-  updateUI();
-  intervalId = setInterval(tick, 1000);
-}
+  if (running) return;
 
+  running = true;
+  currentPhaseIndex = 0;
+  mainBtn.textContent = "Reset";
+
+  updateVisuals();
+
+  intervalId = setInterval(() => {
+    nextPhase();
+  }, 4000 + 6000); // wird direkt unten ersetzt
+}
 function resetTimer() {
   clearInterval(intervalId);
   intervalId = null;
   running = false;
 
-  currentPhaseIndex = 0;
-  timeLeft = phases[0].duration;
-
-  phaseLabel.textContent = "Bereit";
-  countdown.textContent = "--";
   breathingCircle.classList.remove("inhale", "exhale");
-
   leftHalf.classList.remove("dimmed");
   rightHalf.classList.remove("dimmed");
 
   mainBtn.textContent = "Start";
 }
 
+function runBreathingCycle() {
+  let phaseStartTime = Date.now();
+
+  updateVisuals();
+
+  intervalId = setInterval(() => {
+    const currentPhase = phases[currentPhaseIndex];
+    const elapsed = Date.now() - phaseStartTime;
+
+    if (elapsed >= currentPhase.duration * 1000) {
+      currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
+      phaseStartTime = Date.now();
+      updateVisuals();
+    }
+  }, 100);
+}
+
 mainBtn.addEventListener("click", () => {
   if (!running) {
-    startTimer();
+    running = true;
+    currentPhaseIndex = 0;
+    mainBtn.textContent = "Reset";
+    runBreathingCycle();
   } else {
     resetTimer();
   }
