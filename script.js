@@ -1,103 +1,68 @@
 const mainBtn = document.getElementById("mainBtn");
+const dot = document.getElementById("dot");
 const phaseLabel = document.getElementById("phaseLabel");
-const leftFill = document.getElementById("leftFill");
-const rightFill = document.getElementById("rightFill");
 
 const phases = [
-  {
-    name: "Einatmen",
-    duration: 4,
-    activeFill: rightFill,
-    inactiveFill: leftFill
-  },
-  {
-    name: "Ausatmen",
-    duration: 6,
-    activeFill: leftFill,
-    inactiveFill: rightFill
-  }
+  { name: "Ein", duration: 4 },
+  { name: "Aus", duration: 6 }
 ];
 
 let running = false;
 let currentPhaseIndex = 0;
-let phaseTimeout = null;
+let startTime = null;
 let animationFrame = null;
 
-function clearTimers() {
-  if (phaseTimeout) {
-    clearTimeout(phaseTimeout);
-    phaseTimeout = null;
+function animate(timestamp) {
+  if (!startTime) startTime = timestamp;
+
+  const phase = phases[currentPhaseIndex];
+  const elapsed = (timestamp - startTime) / 1000;
+  const progress = elapsed / phase.duration;
+
+  if (progress >= 1) {
+    currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
+    startTime = timestamp;
+    updatePhase();
   }
 
-  if (animationFrame) {
-    cancelAnimationFrame(animationFrame);
-    animationFrame = null;
-  }
+  const angle = (progress % 1) * 360;
+
+  dot.style.transform =
+    `translate(-50%, -50%) rotate(${angle}deg) translate(140px)`;
+
+  animationFrame = requestAnimationFrame(animate);
 }
 
-function setFillInstant(fillElement, scale) {
-  fillElement.style.transition = "none";
-  fillElement.style.transform = `scaleX(${scale})`;
-
-  // Reflow, damit der Browser den Zustand sicher übernimmt
-  void fillElement.offsetWidth;
+function updatePhase() {
+  const phase = phases[currentPhaseIndex];
+  phaseLabel.textContent = phase.name;
 }
 
-function resetVisualState() {
-  clearTimers();
+function start() {
+  running = true;
+  currentPhaseIndex = 0;
+  startTime = null;
+  updatePhase();
+  mainBtn.textContent = "Reset";
 
-  setFillInstant(leftFill, 1);
-  setFillInstant(rightFill, 1);
+  animationFrame = requestAnimationFrame(animate);
+}
+
+function reset() {
+  running = false;
+  cancelAnimationFrame(animationFrame);
+
+  dot.style.transform =
+    "translate(-50%, -50%) rotate(0deg) translate(140px)";
 
   phaseLabel.textContent = "";
   mainBtn.textContent = "Start";
 }
 
-function animatePhase() {
-  const phase = phases[currentPhaseIndex];
-  const activeFill = phase.activeFill;
-  const inactiveFill = phase.inactiveFill;
-  const durationMs = phase.duration * 1000;
-
-  phaseLabel.textContent = phase.name;
-
-  // Inaktive Hälfte voll anzeigen
-  setFillInstant(inactiveFill, 1);
-
-  // Aktive Hälfte auf voll setzen und dann weich auf fast 0 schrumpfen
-  setFillInstant(activeFill, 1);
-  activeFill.style.transition = `transform ${durationMs}ms linear`;
-
-  requestAnimationFrame(() => {
-    activeFill.style.transform = "scaleX(0.02)";
-  });
-
-  phaseTimeout = setTimeout(() => {
-    currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
-    animatePhase();
-  }, durationMs);
-}
-
-function startTimer() {
-  if (running) return;
-
-  running = true;
-  currentPhaseIndex = 0;
-  mainBtn.textContent = "Reset";
-  animatePhase();
-}
-
-function resetTimer() {
-  running = false;
-  resetVisualState();
-}
-
 mainBtn.addEventListener("click", () => {
   if (!running) {
-    startTimer();
+    start();
   } else {
-    resetTimer();
+    reset();
   }
 });
-
-resetVisualState();
