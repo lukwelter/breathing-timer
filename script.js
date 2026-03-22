@@ -2,16 +2,18 @@ const mainBtn = document.getElementById("mainBtn");
 const dot = document.getElementById("dot");
 const phaseLabel = document.getElementById("phaseLabel");
 
-const MOBILE_BREAKPOINT = 420;
 const DESKTOP_RADIUS = 130;
 const MOBILE_RADIUS = 109;
+const MOBILE_BREAKPOINT = 420;
 
-const TOTAL_CYCLE_MS = 10000; // 4s Ein + 6s Aus
-const INHALE_MS = 4000;
-const EXHALE_MS = 6000;
+const phases = [
+  { label: "Ein", durationMs: 4000 },
+  { label: "Aus", durationMs: 6000 }
+];
 
 let running = false;
-let startTime = null;
+let currentPhaseIndex = 0;
+let phaseStartTime = null;
 let animationFrameId = null;
 
 function getRadius() {
@@ -23,43 +25,35 @@ function setDotAngle(angleDeg) {
   dot.style.transform = `rotate(${angleDeg}deg) translateY(-${radius}px)`;
 }
 
-function updateScene(elapsedMs) {
-  const cycleMs = elapsedMs % TOTAL_CYCLE_MS;
-
-  let progress;
-  let angle;
-  let label;
-
-  if (cycleMs < INHALE_MS) {
-    progress = cycleMs / INHALE_MS;
-    angle = progress * 180;
-    label = "Ein";
-  } else {
-    progress = (cycleMs - INHALE_MS) / EXHALE_MS;
-    angle = 180 + progress * 180;
-    label = "Aus";
-  }
-
-  phaseLabel.textContent = label;
-  setDotAngle(angle);
-}
-
 function animate(timestamp) {
   if (!running) return;
 
-  if (startTime === null) {
-    startTime = timestamp;
+  if (phaseStartTime === null) {
+    phaseStartTime = timestamp;
   }
 
-  const elapsedMs = timestamp - startTime;
-  updateScene(elapsedMs);
+  const currentPhase = phases[currentPhaseIndex];
+  const elapsed = timestamp - phaseStartTime;
+  const progress = Math.min(elapsed / currentPhase.durationMs, 1);
+  const angle = progress * 360;
+
+  phaseLabel.textContent = currentPhase.label;
+  setDotAngle(angle);
+
+  if (elapsed >= currentPhase.durationMs) {
+    currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
+    phaseStartTime = timestamp;
+    setDotAngle(0);
+  }
 
   animationFrameId = requestAnimationFrame(animate);
 }
 
 function startTimer() {
   running = true;
-  startTime = null;
+  currentPhaseIndex = 0;
+  phaseStartTime = null;
+  phaseLabel.textContent = phases[0].label;
   mainBtn.textContent = "Reset";
   animationFrameId = requestAnimationFrame(animate);
 }
@@ -72,7 +66,8 @@ function resetTimer() {
     animationFrameId = null;
   }
 
-  startTime = null;
+  currentPhaseIndex = 0;
+  phaseStartTime = null;
   phaseLabel.textContent = "";
   setDotAngle(0);
   mainBtn.textContent = "Start";
