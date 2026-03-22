@@ -67,7 +67,7 @@ function startTimer() {
   running = true;
   currentPhaseIndex = 0;
   phaseStartTime = null;
-  mainBtn.textContent = "Reset";
+  mainBtn.textContent = "Stopp";
   animationFrameId = requestAnimationFrame(animate);
 }
 
