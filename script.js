@@ -1,35 +1,81 @@
 const mainBtn = document.getElementById("mainBtn");
-const breathingCircle = document.getElementById("breathingCircle");
-const leftHalf = document.getElementById("leftHalf");
-const rightHalf = document.getElementById("rightHalf");
+const phaseLabel = document.getElementById("phaseLabel");
+const leftFill = document.getElementById("leftFill");
+const rightFill = document.getElementById("rightFill");
 
 const phases = [
-  { name: "Einatmen", duration: 4, className: "inhale" },
-  { name: "Ausatmen", duration: 6, className: "exhale" }
+  {
+    name: "Einatmen",
+    duration: 4,
+    activeFill: rightFill,
+    inactiveFill: leftFill
+  },
+  {
+    name: "Ausatmen",
+    duration: 6,
+    activeFill: leftFill,
+    inactiveFill: rightFill
+  }
 ];
 
-let currentPhaseIndex = 0;
-let intervalId = null;
 let running = false;
+let currentPhaseIndex = 0;
+let phaseTimeout = null;
+let animationFrame = null;
 
-function updateVisuals() {
-  const currentPhase = phases[currentPhaseIndex];
+function clearTimers() {
+  if (phaseTimeout) {
+    clearTimeout(phaseTimeout);
+    phaseTimeout = null;
+  }
 
-  breathingCircle.classList.remove("inhale", "exhale");
-  breathingCircle.classList.add(currentPhase.className);
-
-  if (currentPhase.name === "Einatmen") {
-    rightHalf.classList.remove("dimmed");
-    leftHalf.classList.add("dimmed");
-  } else {
-    leftHalf.classList.remove("dimmed");
-    rightHalf.classList.add("dimmed");
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
   }
 }
 
-function nextPhase() {
-  currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
-  updateVisuals();
+function setFillInstant(fillElement, scale) {
+  fillElement.style.transition = "none";
+  fillElement.style.transform = `scaleX(${scale})`;
+
+  // Reflow, damit der Browser den Zustand sicher übernimmt
+  void fillElement.offsetWidth;
+}
+
+function resetVisualState() {
+  clearTimers();
+
+  setFillInstant(leftFill, 1);
+  setFillInstant(rightFill, 1);
+
+  phaseLabel.textContent = "";
+  mainBtn.textContent = "Start";
+}
+
+function animatePhase() {
+  const phase = phases[currentPhaseIndex];
+  const activeFill = phase.activeFill;
+  const inactiveFill = phase.inactiveFill;
+  const durationMs = phase.duration * 1000;
+
+  phaseLabel.textContent = phase.name;
+
+  // Inaktive Hälfte voll anzeigen
+  setFillInstant(inactiveFill, 1);
+
+  // Aktive Hälfte auf voll setzen und dann weich auf fast 0 schrumpfen
+  setFillInstant(activeFill, 1);
+  activeFill.style.transition = `transform ${durationMs}ms linear`;
+
+  requestAnimationFrame(() => {
+    activeFill.style.transform = "scaleX(0.02)";
+  });
+
+  phaseTimeout = setTimeout(() => {
+    currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
+    animatePhase();
+  }, durationMs);
 }
 
 function startTimer() {
@@ -38,49 +84,20 @@ function startTimer() {
   running = true;
   currentPhaseIndex = 0;
   mainBtn.textContent = "Reset";
-
-  updateVisuals();
-
-  intervalId = setInterval(() => {
-    nextPhase();
-  }, 4000 + 6000); // wird direkt unten ersetzt
+  animatePhase();
 }
+
 function resetTimer() {
-  clearInterval(intervalId);
-  intervalId = null;
   running = false;
-
-  breathingCircle.classList.remove("inhale", "exhale");
-  leftHalf.classList.remove("dimmed");
-  rightHalf.classList.remove("dimmed");
-
-  mainBtn.textContent = "Start";
-}
-
-function runBreathingCycle() {
-  let phaseStartTime = Date.now();
-
-  updateVisuals();
-
-  intervalId = setInterval(() => {
-    const currentPhase = phases[currentPhaseIndex];
-    const elapsed = Date.now() - phaseStartTime;
-
-    if (elapsed >= currentPhase.duration * 1000) {
-      currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
-      phaseStartTime = Date.now();
-      updateVisuals();
-    }
-  }, 100);
+  resetVisualState();
 }
 
 mainBtn.addEventListener("click", () => {
   if (!running) {
-    running = true;
-    currentPhaseIndex = 0;
-    mainBtn.textContent = "Reset";
-    runBreathingCycle();
+    startTimer();
   } else {
     resetTimer();
   }
 });
+
+resetVisualState();
