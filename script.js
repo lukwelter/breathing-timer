@@ -7,8 +7,8 @@ const MOBILE_RADIUS = 109;
 const MOBILE_BREAKPOINT = 420;
 
 const phases = [
-  { label: "Ein", durationMs: 4000 },
-  { label: "Aus", durationMs: 6000 }
+  { label: "in", durationMs: 4000 },
+  { label: "out", durationMs: 6000 }
 ];
 
 let running = false;
