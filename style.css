@@ -58,13 +58,13 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 18px;
-  height: 18px;
-  margin-left: -9px;
-  margin-top: -9px;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  margin-top: -11px;
   border-radius: 50%;
   background: var(--dot);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   transform-origin: center center;
 }
 
@@ -109,10 +109,10 @@ body {
   }
 
   .dot {
-    width: 16px;
-    height: 16px;
-    margin-left: -8px;
-    margin-top: -8px;
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
   }
 
   .center-label {
